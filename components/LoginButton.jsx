@@ -3,13 +3,20 @@ import Cookies from 'js-cookie';
 
 export default function LoginButton() {
   const handleLogin = async () => {
-    const {data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      
-    });
-
-    if (error) {
-      console.error('Error logging in:', error.message);
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+      });
+  
+      if (error) {
+        console.error('Error logging in:', error.message);
+        alert(`Login failed: ${error.message}`);
+      } else {
+        console.log('Login successful:', data);
+      }
+    } catch (err) {
+      console.error('Unexpected error during login:', err.message);
+      alert(`Unexpected error: ${err.message}`);
     }
   };
 
