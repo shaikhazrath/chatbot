@@ -16,8 +16,8 @@ export default function Home() {
       if (user) {
         router.push('/create');
       } else {
-        alert(`Unexpected error: ${err.message}`);
         setLoading(false); 
+        alert(`Unexpected error: ${err.message}`);
       }
     };
 
