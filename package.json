@@ -11,7 +11,9 @@
   "dependencies": {
     "@google/generative-ai": "^0.24.0",
     "@pinecone-database/pinecone": "^5.1.1",
+    "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.49.1",
+    "js-cookie": "^3.0.5",
     "jsdom": "^26.0.0",
     "lucide-react": "^0.479.0",
     "next": "15.2.1",

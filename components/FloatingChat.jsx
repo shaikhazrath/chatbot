@@ -1,7 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { MessageCircle, Send, X } from 'lucide-react'
-import { supabase } from '@/utils/supabaseClient'
 import { toast } from 'react-hot-toast'
 
 const FloatingChat = ({ projectId }) => {
@@ -9,22 +8,23 @@ const FloatingChat = ({ projectId }) => {
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [projectData, setProjectData] = useState(null)
-  const [isChatOpen, setIsChatOpen] = useState(false) 
+  const [isChatOpen, setIsChatOpen] = useState(false)
 
   useEffect(() => {
     const fetchProject = async () => {
       if (!projectId) return
 
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('id', projectId)
-        .single()
+      try {
+        const response = await fetch(`/api/project/${projectId}`)
+        const data = await response.json()
+        console.log(data)
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to load project')
+        }
 
-      if (error) {
-        toast.error('Failed to load project')
-      } else {
         setProjectData(data)
+      } catch (error) {
+        toast.error(error.message)
       }
     }
 

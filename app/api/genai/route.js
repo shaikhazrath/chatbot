@@ -31,7 +31,7 @@ async function geminiAi(conv, namespaceid) {
       const relevantContext = searchResults.matches.map(match => match.metadata.text).join(' ');
 
       const promptTemplate = `
-      You are an AI-powered chatbot designed to assist users in navigating the Stackzero website. 
+      You are an AI-powered chatbot designed to assist users in navigating the website. 
       Your goal is to provide helpful information about the company's services, offerings, and resources based on the context below.
     
       Context:

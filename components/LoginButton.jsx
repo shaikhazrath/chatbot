@@ -1,8 +1,9 @@
 import { supabase } from '../utils/supabaseClient';
+import Cookies from 'js-cookie';
 
 export default function LoginButton() {
   const handleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
+    const {data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       
     });
