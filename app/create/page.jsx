@@ -32,7 +32,7 @@ export default function ModernChatbotSetup() {
           throw new Error('No token found');
         }
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/user`, {
+        const response = await fetch(`https://customer-support-backend-cly5.onrender.com/api/auth/user`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -64,7 +64,7 @@ export default function ModernChatbotSetup() {
 
       try {
         const token = localStorage.getItem('token'); // Retrieve JWT token from localStorage
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects`, {
+        const response = await fetch(`https://customer-support-backend-cly5.onrender.com/api/projects`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -127,7 +127,7 @@ export default function ModernChatbotSetup() {
 
       // Step 2: Create a new project
       const token = localStorage.getItem('token'); // Retrieve JWT token from localStorage
-      const projectResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects`, {
+      const projectResponse = await fetch(`https://customer-support-backend-cly5.onrender.com/api/projects`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -150,7 +150,7 @@ export default function ModernChatbotSetup() {
       setScrapedData({ scrapedUrls: allurls, transcriptId });
 
       // Fetch updated projects
-      const updatedProjectsResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects`, {
+      const updatedProjectsResponse = await fetch(`https://customer-support-backend-cly5.onrender.com/api/projects`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

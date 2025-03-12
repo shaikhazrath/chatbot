@@ -21,7 +21,7 @@ const ChatPreview = ({ params }) => {
       }
 
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects/${id}`, {
+        const response = await fetch(`https://customer-support-backend-cly5.onrender.com/api/projects/${id}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

@@ -26,7 +26,7 @@ const AuthPage = () => {
         }
 
         // Verify token by calling the /api/auth/user endpoint
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/user`, {
+        const response = await fetch(`https://customer-support-backend-cly5.onrender.com/api/auth/user`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -74,8 +74,8 @@ const AuthPage = () => {
     try {
       // Determine endpoint based on form type
       const endpoint = isLogin
-        ? `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/login`
-        : `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/register`;
+        ? `https://customer-support-backend-cly5.onrender.com/api/auth/login`
+        : `https://customer-support-backend-cly5.onrender.com/api/auth/register`;
 
       // Prepare request
       const requestOptions = {
