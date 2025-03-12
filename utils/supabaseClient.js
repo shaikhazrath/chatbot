@@ -7,4 +7,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   autoRefreshToken: true,
   persistSession: true,
   detectSessionInUrl: true,
+  cookies: {
+    secure: false, // Only for local development without HTTPS
+  },
 });

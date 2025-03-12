@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { supabase } from "../utils/supabaseClient"; // Import your Supabase client
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -17,6 +19,38 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+  useEffect(() => {
+    // Check for session on page load
+    const checkSession = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+
+        if (error) {
+          console.error("Error retrieving session:", error.message);
+        } else {
+          console.log("Session retrieved:", data.session);
+        }
+
+        // Handle session in URL hash (e.g., after OAuth redirect)
+        const urlParams = new URLSearchParams(window.location.hash.slice(1));
+        const accessToken = urlParams.get("access_token");
+        if (accessToken) {
+          console.log("Access token found in URL:", accessToken);
+
+          // Set the session explicitly
+          await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: urlParams.get("refresh_token"),
+          });
+        }
+      } catch (err) {
+        console.error("Unexpected error during session check:", err.message);
+      }
+    };
+
+    checkSession();
+  }, []);
+
   return (
     <html lang="en">
       <body
