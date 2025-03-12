@@ -6,7 +6,7 @@ export default function LoginButton() {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-          redirectTo: `https://chatbot-six-mauve.vercel.app/auth/callback`,
+          redirectTo: `http://localhost:3002`,
       },
   })
 
