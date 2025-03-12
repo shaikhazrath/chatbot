@@ -2,7 +2,9 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Pinecone } from '@pinecone-database/pinecone';
 
 const apiKey = 'AIzaSyC449GmuXR5ongxeePmqZJ7BUxAbb28fQw';
+
 const genAI = new GoogleGenerativeAI(apiKey);
+
 const pc = new Pinecone({
      apiKey: 'pcsk_3F3uHz_FSL1katfpjvPn3MvsWKmM8onPh1wbeeg3m2fqFSYehrvzeSaChDiwvyf9MHiXia'
 });
