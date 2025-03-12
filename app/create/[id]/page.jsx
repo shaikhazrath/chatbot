@@ -11,17 +11,22 @@ const ChatPreview = ({ params }) => {
 
   useEffect(() => {
     const fetchProject = async () => {
-      const { id } = await params // Extract project ID from params
+      const { id } = await params 
       console.log(id)
 
       if (!id) return
+      const token = localStorage.getItem('token'); // Retrieve JWT token from localStorage
+      if (!token) {
+        throw new Error('No token found');
+      }
 
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects/${id}`, {
           method: 'GET',
-          credentials: 'include',
-
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`, // Send token in Authorization header
+          },
         })
 
         if (!response.ok) {
@@ -96,10 +101,8 @@ console.log(projectData.transcript_id)
         <h1 className="text-3xl font-bold">Chat Preview</h1>
       </div>
 
-      {/* Chat Container */}
       <div className="flex h-[calc(100vh-12rem)]">
         <div className="w-full bg-white border border-gray-200 rounded-xl p-6">
-          {/* Chat Window */}
           <div className="h-[calc(100%-60px)] overflow-y-auto mb-4">
             {messages.map((message) => (
               <div
