@@ -1,79 +1,87 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
 import { MessageCircle, Send } from 'lucide-react'
-import { supabase } from '@/utils/supabaseClient'
 import { toast } from 'react-hot-toast'
-import { useRouter } from 'next/router'
 
-const ChatPreview = ({params}) => {
+const ChatPreview = ({ params }) => {
   const [messages, setMessages] = useState([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [projectData, setProjectData] = useState(null)
 
   useEffect(() => {
- 
-
     const fetchProject = async () => {
-        const { id } = await params
+      const { id } = await params // Extract project ID from params
+      console.log(id)
 
-        if (!id) return
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('id', id)
-        .single()
+      if (!id) return
 
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects/${id}`, {
+          method: 'GET',
+          credentials: 'include',
 
-      if (error) {
-        toast.error('Failed to load project')
-      } else {
+          headers: { 'Content-Type': 'application/json' },
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to load project')
+        }
+
+        const data = await response.json()
         setProjectData(data)
+        console.log(data)
+      } catch (error) {
+        console.error('Error fetching project:', error)
+        toast.error('Failed to load project')
       }
     }
 
     fetchProject()
-  }, [])
+  }, [params])
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return
 
     try {
       setIsLoading(true)
-      const userMessage = { 
+      const userMessage = {
         id: Date.now(),
         text: inputValue,
         sender: 'user',
-        timestamp: new Date()
+        timestamp: new Date(),
       }
 
-      setMessages(prev => [...prev, userMessage])
+      setMessages((prev) => [...prev, userMessage])
       setInputValue('')
+console.log(projectData.transcript_id)
       const response = await fetch('/api/genai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+
         body: JSON.stringify({
           message: inputValue,
           transcriptId: projectData?.transcript_id,
-        })
+        }),
       })
 
       const data = await response.json()
+
       if (response.ok) {
-        setMessages(prev => [
+        setMessages((prev) => [
           ...prev,
           {
             id: Date.now() + 1,
             text: data.response,
             sender: 'bot',
-            timestamp: new Date()
-          }
+            timestamp: new Date(),
+          },
         ])
       } else {
         throw new Error(data.message || 'Something went wrong')
       }
     } catch (error) {
+      console.error('Error sending message:', error)
       toast.error(error.message)
     } finally {
       setIsLoading(false)
@@ -93,16 +101,20 @@ const ChatPreview = ({params}) => {
         <div className="w-full bg-white border border-gray-200 rounded-xl p-6">
           {/* Chat Window */}
           <div className="h-[calc(100%-60px)] overflow-y-auto mb-4">
-            {messages.map(message => (
-              <div 
+            {messages.map((message) => (
+              <div
                 key={message.id}
-                className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} mb-4`}
+                className={`flex ${
+                  message.sender === 'user' ? 'justify-end' : 'justify-start'
+                } mb-4`}
               >
-                <div className={`max-w-[75%] p-4 rounded-lg ${
-                  message.sender === 'user' 
-                    ? 'bg-blue-500 text-white rounded-br-none' 
-                    : 'bg-gray-100 text-gray-800 rounded-bl-none'
-                }`}>
+                <div
+                  className={`max-w-[75%] p-4 rounded-lg ${
+                    message.sender === 'user'
+                      ? 'bg-blue-500 text-white rounded-br-none'
+                      : 'bg-gray-100 text-gray-800 rounded-bl-none'
+                  }`}
+                >
                   <p className="text-sm">{message.text}</p>
                   <span className="block text-xs text-gray-500 mt-1">
                     {new Date(message.timestamp).toLocaleTimeString()}

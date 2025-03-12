@@ -1,14 +1,13 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { Globe, Upload, Command, Copy } from 'lucide-react'
-import { supabase } from '@/utils/supabaseClient'
 import { toast } from 'react-hot-toast'
 import Link from 'next/link'
 
 export default function ModernChatbotSetup() {
   const [formData, setFormData] = useState({
     websiteUrl: '',
-    botname:'',
+    botname: '',
     model: 'claude-3-5-sonnet',
     temperature: 0.7,
     maxTokens: 1000
@@ -17,7 +16,7 @@ export default function ModernChatbotSetup() {
   const [scrapedData, setScrapedData] = useState({
     scrapedUrls: [],
     transcriptId: null
-  })
+  }) 
 
   const [isLoading, setIsLoading] = useState(false)
   const [user, setUser] = useState(null)
@@ -26,12 +25,24 @@ export default function ModernChatbotSetup() {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data, error } = await supabase.auth.getUser()
-      if (error) {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/user`, {
+          method: 'GET',
+          credentials: 'include', // Needed for session cookies
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch user')
+        }
+
+        const userData = await response.json()
+        setUser(userData)
+      } catch (error) {
         console.error('Error fetching user:', error)
         toast.error('Failed to fetch user details')
-      } else {
-        setUser(data?.user)
       }
     }
 
@@ -40,19 +51,26 @@ export default function ModernChatbotSetup() {
 
   useEffect(() => {
     const fetchUserProjects = async () => {
-      if (!user?.id) return
+      if (!user?._id) return
 
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects`, {
+          method: 'GET',
+          credentials: 'include', // Needed for session cookies
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
 
-      if (error) {
+        if (!response.ok) {
+          throw new Error('Failed to fetch projects')
+        }
+
+        const projectData = await response.json()
+        setUserProjects(projectData || [])
+      } catch (error) {
         console.error('Error fetching user projects:', error)
         toast.error('Failed to fetch projects')
-      } else {
-        setUserProjects(data || [])
       }
     }
 
@@ -68,7 +86,7 @@ export default function ModernChatbotSetup() {
   }
 
   const handleScrapeWebsite = async () => {
-    const { websiteUrl,botname } = formData
+    const { websiteUrl, botname } = formData
     if (!websiteUrl || !/^https?:\/\//.test(websiteUrl)) {
       setUrlError('Please enter a valid URL starting with http/https')
       return
@@ -78,49 +96,56 @@ export default function ModernChatbotSetup() {
       setIsLoading(true)
       setUrlError('')
       
-      const response = await fetch('/api/webscrape', {
+      // First scrape the website
+      const scrapeResponse = await fetch('/api/webscrape', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: websiteUrl })
       })
 
-      const result = await response.json()
-      if (response.ok) {
-        const { allurls, transcriptId } = result
 
-        const currentUserId = user?.id
-        if (!currentUserId) {
-          toast.error('User not logged in')
-          return
-        }
-
-        const { error } = await supabase.from('projects').insert([
-          {
-            user_id: currentUserId,
-            project_name: botname,
-            transcript_id: transcriptId,
-            created_at: new Date().toISOString()
-          }
-        ])
-
-        if (error) {
-          console.error('Error saving to Supabase:', error)
-          toast.error('Failed to save project')
-        } else {
-          toast.success('Website scraped successfully!')
-          setScrapedData({ scrapedUrls: allurls, transcriptId })
-        }
-
-        const { data: updatedProjects } = await supabase
-          .from('projects')
-          .select('*')
-          .eq('user_id', currentUserId)
-          .order('created_at', { ascending: false })
-
-        setUserProjects(updatedProjects || [])
-      } else {
-        throw new Error(result.message || "Failed to scrape website")
+      const scrapeResult = await scrapeResponse.json()
+      
+      if (!scrapeResponse.ok) {
+        throw new Error(scrapeResult.message || "Failed to scrape website")
       }
+      
+      const { allurls, transcriptId } = scrapeResult
+
+      // Now create a new project using our API
+      const projectResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: botname,
+          transcript_id: transcriptId
+        })
+      })
+
+      const projectResult = await projectResponse.json()
+      
+      if (!projectResponse.ok) {
+        throw new Error(projectResult.msg || "Failed to save project")
+      }
+
+      toast.success('Website scraped successfully!')
+      setScrapedData({ scrapedUrls: allurls, transcriptId })
+
+      // Fetch updated projects
+      const updatedProjectsResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      })
+
+      if (!updatedProjectsResponse.ok) {
+        throw new Error("Failed to fetch updated projects")
+      }
+
+      const updatedProjects = await updatedProjectsResponse.json()
+      setUserProjects(updatedProjects || [])
+      
     } catch (error) {
       console.error(error)
       toast.error(error.message || "An error occurred while scraping")
@@ -153,11 +178,11 @@ export default function ModernChatbotSetup() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {userProjects.length > 0 ? (
                 userProjects.map((project, index) => (
-                  <Link href={`/create/${project.id}`} key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-2">
-                    <h3 className="text-lg font-semibold text-gray-800 truncate">{project.project_name}</h3>
+                  <Link href={`/create/${project._id}`} key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-2">
+                    <h3 className="text-lg font-semibold text-gray-800 truncate">{project.name}</h3>
                     
                     <p className="text-xs text-gray-500">
-                      Created: {new Date(project.created_at).toLocaleDateString()}
+                      Created: {new Date(project.createdAt).toLocaleDateString()}
                     </p>
                   </Link>
                 ))
@@ -227,26 +252,6 @@ export default function ModernChatbotSetup() {
         </div>
       </div>
     </div>
-  )
-}
-
-// Helper component for folder icon
-function FolderIcon(props) {
-  return (
-    <svg
-      {...props}
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth={1.5}
-      stroke="currentColor"
-      className="w-6 h-6"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69 4.5h.008v.008H13.31v-.008zm0-6h.008v.008H13.31V8.25h-.008zm6.57 6.57l-.707-.707m-12.728 0L4.25 12.75"
-      />
-    </svg>
   )
 }
 

@@ -1,69 +1,214 @@
-'use client';
-import { useEffect, useState } from 'react';
-import { supabase } from '@/utils/supabaseClient';
-import LoginButton from '@/components/LoginButton';
-import { useRouter } from 'next/navigation';
-import logo from '@/public/logo.png'
-import Image from 'next/image';
-export default function Home() {
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
+'use client'
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation'; // Import router for redirecting
 
+const AuthPage = () => {
+  const router = useRouter();
+  // State for form inputs and UI control
+  const [isLogin, setIsLogin] = useState(true);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: ''
+  });
+  const [message, setMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  // Check if user is already authenticated on component mount
   useEffect(() => {
-    const fetchUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log(user)
-      if (user) {
-        router.push('/create');
-      } else {
-        setLoading(false); 
-        alert(`Unexpected error: ${err.message}`);
+    const checkAuthStatus = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/user`, {
+          method: 'GET',
+          credentials: 'include', // Important for sending cookies
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          // User is authenticated, redirect to dashboard or home
+          router.push('/create'); // Replace with your authenticated route
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        // If there's an error, we assume user is not authenticated
+        // and allow them to continue with the login/register page
+      } finally {
+        setCheckingAuth(false); // Mark auth check as complete
       }
     };
 
-    fetchUser();
+    checkAuthStatus();
   }, [router]);
 
-  if (loading) {
+  // Handle input changes
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  // Toggle between login and register forms
+  const toggleForm = () => {
+    setIsLogin(!isLogin);
+    setMessage('');
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setMessage('');
+
+    try {
+      // Determine endpoint based on form type
+      const endpoint = isLogin ? `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/login` : `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/register`;
+      
+      // Prepare request
+      const requestOptions = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Important for cookies
+        body: JSON.stringify(isLogin 
+          ? { email: formData.email, password: formData.password } 
+          : formData
+        )
+      };
+
+      // Send request to server
+      const response = await fetch(endpoint, requestOptions);
+      const data = await response.json();
+      console.log(data);
+      
+      if (!response.ok) {
+        throw new Error(data.msg || 'Something went wrong');
+      }
+
+      // Handle successful response
+      setMessage(isLogin ? 'Login successful!' : 'Registration successful!');
+      
+      // Redirect to dashboard after successful login/registration
+      setTimeout(() => {
+        router.push('/create'); // Replace with your authenticated route
+      }, 1000);
+    } catch (error) {
+      setMessage(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Show loading state while checking authentication
+  if (checkingAuth) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-black">
-        <p className="text-lg text-gray-400">Loading...</p>
+      <div className="flex min-h-screen items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent"></div>
+          <p className="mt-2 text-gray-700">Checking authentication...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-black px-4 overflow-hidden">
-      <div className="absolute inset-0 z-0">
-        <div className="absolute w-48 h-48 bg-blue-500 rounded-full opacity-30 blur-3xl top-1/4 left-1/4 animate-pulse"></div>
-        <div className="absolute w-32 h-32 bg-purple-500 rounded-full opacity-30 blur-3xl bottom-1/4 right-1/4 animate-pulse"></div>
-      </div>
-
-      <div className="relative z-10 max-w-md w-full space-y-8 p-10 bg-black/80 rounded-3xl shadow-2xl text-center border border-gray-800 backdrop-blur-lg">
-        <div className="mb-6">
-          <Image
-          width={10}
-          height={10}
-            src={logo}
-            alt="App Logo"
-            className="w-24 h-24 mx-auto"
-          />
-        </div>
-
-        <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 mb-4">
-          Welcome to Gala
+    <div className="flex min-h-screen items-center justify-center bg-gray-100">
+      <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
+        <h1 className="mb-6 text-center text-2xl font-bold">
+          {isLogin ? 'Login to Your Account' : 'Create an Account'}
         </h1>
-
-        <p className="text-sm text-gray-400 mb-8">
-          Log in to access your account and explore the future.
-        </p>
-
-        <LoginButton />
-
-        <p className="text-xs text-gray-500 mt-8">
-          © 2023 Your App Name. All rights reserved.
-        </p>
+        
+        {/* Display success/error messages */}
+        {message && (
+          <div className={`mb-4 rounded p-3 text-center ${message.includes('successful') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+            {message}
+          </div>
+        )}
+        
+        <form onSubmit={handleSubmit}>
+          {/* Name field - only for registration */}
+          {!isLogin && (
+            <div className="mb-4">
+              <label className="mb-2 block text-sm font-bold text-gray-700" htmlFor="name">
+                Name
+              </label>
+              <input
+                className="w-full appearance-none rounded border px-3 py-2 leading-tight text-gray-700 focus:outline-none focus:shadow-outline"
+                id="name"
+                type="text"
+                name="name"
+                placeholder="Full name"
+                value={formData.name}
+                onChange={handleChange}
+                required={!isLogin}
+              />
+            </div>
+          )}
+          
+          {/* Email field */}
+          <div className="mb-4">
+            <label className="mb-2 block text-sm font-bold text-gray-700" htmlFor="email">
+              Email
+            </label>
+            <input
+              className="w-full appearance-none rounded border px-3 py-2 leading-tight text-gray-700 focus:outline-none focus:shadow-outline"
+              id="email"
+              type="email"
+              name="email"
+              placeholder="Email address"
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          
+          {/* Password field */}
+          <div className="mb-6">
+            <label className="mb-2 block text-sm font-bold text-gray-700" htmlFor="password">
+              Password
+            </label>
+            <input
+              className="w-full appearance-none rounded border px-3 py-2 leading-tight text-gray-700 focus:outline-none focus:shadow-outline"
+              id="password"
+              type="password"
+              name="password"
+              placeholder="Password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          
+          {/* Submit button */}
+          <div className="mb-6">
+            <button
+              className="w-full rounded bg-blue-500 py-2 px-4 font-bold text-white hover:bg-blue-700 focus:outline-none focus:shadow-outline"
+              type="submit"
+              disabled={isLoading}
+            >
+              {isLoading 
+                ? 'Processing...' 
+                : isLogin ? 'Login' : 'Register'}
+            </button>
+          </div>
+          
+          {/* Form toggle */}
+          <div className="text-center text-sm">
+            {isLogin ? "Don't have an account? " : "Already have an account? "}
+            <button
+              type="button"
+              className="text-blue-500 hover:text-blue-700"
+              onClick={toggleForm}
+            >
+              {isLogin ? 'Register' : 'Login'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
-}
+};
+
+export default AuthPage;
