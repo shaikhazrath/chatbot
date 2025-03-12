@@ -1,3 +1,4 @@
+'use client'
 import { useEffect } from "react";
 import { supabase } from "../utils/supabaseClient"; // Import your Supabase client
 import { Geist, Geist_Mono } from "next/font/google";
